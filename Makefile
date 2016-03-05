@@ -6,11 +6,11 @@ INCLUDES =
 LDFLAGS =
 LIBS = 
 
-SRCS = generate_peers.c 
+SRCS = generate_graph.c 
 
 OBJS = $(SRCS:.c=.o)
 
-MAIN = generate_peers
+MAIN = generate_graph
 
 .PHONY: clean
 
