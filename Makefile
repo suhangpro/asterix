@@ -30,5 +30,5 @@ $(MAIN2) : $(OBJS2)
 	$(CXX) $(CFLAGS) $(INCLUDES) -c $<  -o $@
 
 clean :
-	$(RM) *.o *~ $(MAIN)
+	$(RM) *.o *~ $(MAIN1) $(MAIN2)
 
