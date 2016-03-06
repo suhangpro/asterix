@@ -15,6 +15,17 @@ for ip in $ip_addrs; do
     done
 done
 
+# trap ctrl-c and call kill_peers()
+trap kill_peers INT
+peer_pids=`pgrep -P$$`
+function kill_peers() {
+    # kill all child processes (peers) 
+    for pid in $peer_pids; do
+        kill $pid
+    done
+    exit
+}
+
 # wait for command (q -- quit)
 while [ -z "$cmd" ] || [ "$cmd" != q ]; do 
     read -p "Command (q--quit,i--info): " cmd
@@ -28,7 +39,6 @@ while [ -z "$cmd" ] || [ "$cmd" != q ]; do
     esac
 done
 
-# kill all child processes (peers) 
-for pid in `pgrep -P$$`; do
-    kill $pid
-done
+# stop all peers
+kill_peers
+
