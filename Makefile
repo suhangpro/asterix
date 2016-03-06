@@ -18,7 +18,7 @@ MAIN2 = run_peer
 .PHONY: clean
 
 all : $(MAIN1) $(MAIN2)
-	@echo $(MAIN1), $(MAIN2) compiled
+	@echo $(MAIN1), $(MAIN2) compiled successfully.
 
 $(MAIN1) : $(OBJS1) 
 	$(CXX) $(CFLAGS) $(INCLUDES) -o $(MAIN1) $(OBJS1) $(LFLAGS) $(LIBS)
