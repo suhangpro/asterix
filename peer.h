@@ -48,9 +48,7 @@ public:
 		// setUpClient();
 	}
 
-	int Run();
-
-	int lookUp();
+	virtual int Run() = 0;
 
 	virtual void processMessage(int rfd) = 0;
 
@@ -72,9 +70,15 @@ protected:
 	std::string _port;
 	int _peerId;
 
+	// neighbor peers
 	std::vector<std::string> _nbIps;
 	std::vector<std::string> _nbPorts;
 	std::vector<int> _nbPeerIds;
+
+	// all peers in the network
+	// basically, we assume the peerId consecutively starts from 0
+	std::vector<std::string> _netIps;
+	std::vector<std::string> _netPorts;
 
 	// socket vars
 	volatile fd_set _the_state;
@@ -89,12 +93,12 @@ struct Message {
 };
 
 inline void *readTcpServer(void *arg) {
-	std::cout << "arg: " << arg << std::endl;
+	// std::cout << "arg: " << arg << std::endl;
 	Message *msg = (Message*)arg;
-	std::cout << "rfd: " << msg->rfd << std::endl;
-	std::cout << "peer: " << msg->p << std::endl;
+	// std::cout << "rfd: " << msg->rfd << std::endl;
+	// std::cout << "peer: " << msg->p << std::endl;
 	int rfd = msg->rfd;
-	std::cout << "start processMessage\n";
+	// std::cout << "start processMessage\n";
 	msg->p->processMessage(rfd);
 }
 

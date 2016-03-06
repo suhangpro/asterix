@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	else
 		p = new Buyer(peerId, netFileName);
 
-	std::cout << "Before run p: " << p << std::endl;
+	// std::cout << "Before run p: " << p << std::endl;
 	p->Run();
 
 	delete p;

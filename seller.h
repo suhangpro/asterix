@@ -14,6 +14,8 @@ public:
 		randPickGoods(goodsAmount);
 	}
 
+	virtual int Run();
+
 protected:
 	void processMessage(int rfd);
 
