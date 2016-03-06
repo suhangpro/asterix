@@ -107,12 +107,14 @@ void construct_graph(vector<peer_t>& peers, int degree) {
 void write_peers(const string outputPath, const vector<peer_t>& peers) {
     ofstream outputFile(outputPath.c_str());
     if (outputFile.is_open()) {
+        outputFile<<peers.size()<<endl;
         for (vector<peer_t>::const_iterator it = peers.begin() ; it != peers.end(); ++it) {
-            outputFile<<it->peerId<<" "<<it->ipAddr<<":"<<it->port<<" ";
+            outputFile<<it->peerId<<" "<<it->ipAddr<<" "<<it->port<<" ";
+            outputFile<<it->neighbors.size()<<" ";
             if (it->neighbors.size()>0) {
                 outputFile<<it->neighbors[0];
                 for (vector<int>::const_iterator it2 = it->neighbors.begin()+1; it2 != it->neighbors.end(); ++it2) 
-                    outputFile<<","<<*it2;
+                    outputFile<<" "<<*it2;
             }
             outputFile<<endl;
         }
