@@ -15,7 +15,8 @@
 const int MAXLEN = 1024 ;   // Max length of a message.
 const int MAXFD = 7 ;       // Maximum file descriptors to use. Equals maximum clients.
 
-enum Goods{Fisher = 0, Salt, Boars, GOODS_COUNT};
+enum Goods{Fish = 0, Salt, Boars, GOODS_COUNT};
+static const char *goodsNames[] = {"Fish", "Salt", "Boars"};
 
 void *readTcpServer(void *arg);
 
@@ -32,6 +33,7 @@ public:
 
 		_mutex_state = PTHREAD_MUTEX_INITIALIZER;
 		BACKLOG = 5;
+		_activeConnect = 0;
 
 		readNetworkFile(networkFileName);
 
@@ -56,6 +58,8 @@ protected:
 	int readNetworkFile(const char *netFileName);
 
 	int setUpServer();
+
+	int startServer();	// to process multi-thread purchase request
 
 	int establishServerConnection();
 
@@ -85,6 +89,7 @@ protected:
 	pthread_mutex_t _mutex_state;
 	int _server_fd;
 	int BACKLOG;     // Number of connections that can wait in que before they be accept()ted
+	int _activeConnect;
 };
 
 struct Message {

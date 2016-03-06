@@ -2,6 +2,7 @@
 #include "seller.h"
 #include <cstdlib>
 
+// ./run_peer peerId netFile isSeller
 int main(int argc, char *argv[]) {
 	int peerId = std::atoi(argv[1]);
 	const char *netFileName = argv[2];
@@ -13,7 +14,7 @@ int main(int argc, char *argv[]) {
 	else
 		p = new Buyer(peerId, netFileName);
 
-	// std::cout << "Before run p: " << p << std::endl;
+	// std::cout << "Before run p: " o<< p << std::endl;
 	p->Run();
 
 	delete p;

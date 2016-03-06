@@ -4,7 +4,7 @@
 #include "peer.h"
 #include <ctime>
 
-const int goodsAmount = 5;
+const int goodsAmount = 2;
 
 class Seller : public Peer {
 public:
@@ -20,6 +20,8 @@ protected:
 	void processMessage(int rfd);
 
 	void randPickGoods(int amount);
+
+	int reply(int rfd, const char *msg);
 
 protected:
 	Goods _goods;

@@ -139,3 +139,59 @@ int Peer::sendServerMessage(int fd, const std::string &data) {
     //if(ret != strlen(data.c_str()) throw some error;
     return 0;
 }
+
+// This function will start to process a server to process purchase request in a multi-thread manner
+int Peer::startServer() {
+	std::string welcome_msg("Welcome to this telnet chess server.\n");
+
+    pthread_t threads[MAXFD]; //create 10 handles for threads.
+
+    FD_ZERO(&_the_state); // FD_ZERO clears all the filedescriptors in the file descriptor set fds.
+
+    _activeConnect = 0;
+
+    Message *pMsg = new Message;
+
+    while(1) // start looping here
+    {
+        int rfd;
+        void *arg;
+
+        // if a client is trying to connect, establish the connection and create a fd for the client.
+        rfd = establishServerConnection();
+
+        if (rfd >= 0)
+        {
+            std::cout << "Client connected. Using file desciptor " << rfd << std::endl;
+            if (_activeConnect > MAXFD)
+            {
+                std::cout << "To many clients trying to connect." << std::endl;
+                close(rfd);
+                continue;
+            }
+
+            pthread_mutex_lock(&_mutex_state);  // Make sure no 2 threads can create a fd simultanious.
+
+            FD_SET(rfd, &_the_state);  // Add a file descriptor to the FD-set.
+
+            _activeConnect++;
+
+            pthread_mutex_unlock(&_mutex_state); // End the mutex lock
+
+            // std::cout << "Run, rfd: " << rfd << std::endl;
+            pMsg->p = this;
+        	pMsg->rfd = rfd;
+        	arg = (void*)(pMsg);
+/*        	std::cout << "Run, pMsg: " << pMsg << std::endl;
+        	std::cout << "Run, arg: " << arg << std::endl;*/
+            // arg = (void *)(&rfd);
+
+            // sendServerMessage(rfd, welcome_msg); // send a welcome message/instructions.
+
+            // now create a thread for this client to intercept all incomming data from it.
+            pthread_create(&threads[rfd], NULL, readTcpServer, arg);
+        }
+    }
+
+    delete pMsg;
+}
