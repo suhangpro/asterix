@@ -10,7 +10,7 @@ n_peers=0
 for ip in $ip_addrs; do
     peer_ids=`grep $ip $1 | cut -d " " -f 1`
     for peer in $peer_ids; do
-        ./dummy_work.sh $peer $1 &
+        ./run_peer $peer $1 $(($RANDOM % 2)) &
         let n_peers=n_peers+1
     done
 done
