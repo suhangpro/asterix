@@ -5,6 +5,14 @@ ip_addrs=`ifconfig  | \
 grep -Eo "inet addr:([0-9]{1,3}[\.]){3}[0-9]{1,3}" | \
 grep -Eo "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`
 
+# log folders
+if [ ! -d logs ]; then
+    mkdir logs
+fi
+exp_id=$((`ls logs | egrep -o '[0-9]{3}' | sort -n | tail -n 1`+1))
+log_dir=`printf 'logs/log.%03d' $exp_id`
+mkdir $log_dir
+
 # start a process for each peer in background
 n_peers=0
 n_sellers=0
@@ -15,7 +23,7 @@ for ip in $ip_addrs; do
     curr_peer_ids=`grep $ip $1 | cut -d " " -f 1`
     for peer in $curr_peer_ids; do
         is_seller=$(($RANDOM % 2))
-        ./run_peer $peer $1 $is_seller &
+        ./dummy_work.sh $peer $1 $is_seller > `printf '%s/peer.%03d' $log_dir $peer` &
         peer_types[$n_peers]=$is_seller
         peer_ids[$n_peers]=$peer
         let n_peers=n_peers+1
@@ -31,7 +39,9 @@ function kill_peers() {
     # kill all child processes (peers) 
     for pid in $peer_pids; do
         kill $pid
+        wait $pid
     done
+    cat $log_dir/peer.* > $log_dir/summary
     exit
 }
 
