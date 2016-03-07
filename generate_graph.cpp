@@ -1,3 +1,22 @@
+/*
+ * Random p2p graph generation
+ * This program takes as input a configuration file and generates 
+ * a random p2p graph accordingly. 
+ * Example configuration file: 
+ * 
+ * 5
+ * 127.0.0.1 10 1101 
+ * 10.171.26.10 10 10120
+ * 10.235.36.143 10 10120
+ *
+ * The first line indicates the desired degree (#neighbors) of the graph. 
+ * All peers will have either this number of neighbors or one more. 
+ * 
+ * Each following line lists an ip adress and the number of peers on this address. 
+ * The last number of each line is the lowest available ports 
+ * 
+ */
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -17,13 +36,13 @@ bool cmp_peer(peer_t p1, peer_t p2) {
     return p1.peerId<p2.peerId; 
 }
 
-void init_peers(const string, vector<peer_t>&, int*);
-void construct_graph(vector<peer_t>&, int); 
-void write_peers(const string, const vector<peer_t>&); 
+void init_peers(const string, vector<peer_t>&, int*); 	/* read peer configration file */
+void construct_graph(vector<peer_t>&, int);  		/* randomly construct graph */ 
+void write_peers(const string, const vector<peer_t>&); 	/* write out peers */
 
 int main(int argc, char* argv[]) {
     if (argc < 2 || argc >3) {
-        cerr << "Usage: " << argv[0] << " CONF [PEERS]" << endl;
+        cerr << "Usage: " << argv[0] << " CONF [GRAPH]" << endl;
         return 1;
     }
     string outputPath = "peers"; 
@@ -52,6 +71,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+/* read peer configration file */
 void init_peers(const string confFilePath, vector<peer_t>& peers, int* degree) {
     ifstream confFile(confFilePath.c_str());
     if (confFile.is_open()) {
@@ -79,6 +99,7 @@ void init_peers(const string confFilePath, vector<peer_t>& peers, int* degree) {
     }
 }
 
+/* randomly construct graph */ 
 void construct_graph(vector<peer_t>& peers, int degree) {
     int i,j;    
     bool relaxed; 
@@ -104,6 +125,7 @@ void construct_graph(vector<peer_t>& peers, int degree) {
     }
 }
 
+/* write out peers */
 void write_peers(const string outputPath, const vector<peer_t>& peers) {
     ofstream outputFile(outputPath.c_str());
     if (outputFile.is_open()) {
