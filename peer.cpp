@@ -47,12 +47,6 @@ int Peer::readNetworkFile(const char *netFileName) {
 		}
 	}
 
-	for(size_t n = 0; n < _nbPeerIds.size(); ++n) {
-		int nbPeerId = _nbPeerIds[n];
-		_nbIps.push_back(_netIps[nbPeerId]);
-		_nbPorts.push_back(_netPorts[nbPeerId]);
-	}
-
 	return 0;
 }
 
@@ -87,12 +81,11 @@ int Peer::setUpServer() {
 
     if(ret != 0)
     {
-        std::cout << "error :" << strerror(errno) << std::endl;
+        std::cout << "[setUpServer error]: " << strerror(errno) << std::endl << std::endl;
         return -1 ;
     }
 
     ret = listen(server_fd, BACKLOG);
-    //if(ret < 0) throw some error;
 
 	return server_fd;
 }
@@ -126,7 +119,7 @@ int Peer::establishServerConnection() {
 	    inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
 	}
 
-	std::cout << "Connection accepted from "  << ipstr <<  " using port " << port << std::endl;
+	std::cout << "[peer " << _peerId << "]: Connection accepted from "  << ipstr <<  " using port " << port << std::endl;
 
     return new_sd;
 }
@@ -143,8 +136,6 @@ int Peer::sendServerMessage(int fd, const std::string &data) {
 
 // This function will start to process a server to process purchase request in a multi-thread manner
 int Peer::startServer() {
-	std::string welcome_msg("Welcome to this telnet chess server.\n");
-
     pthread_t threads[MAXFD]; //create 10 handles for threads.
 
     FD_ZERO(&_the_state); // FD_ZERO clears all the filedescriptors in the file descriptor set fds.
@@ -179,15 +170,9 @@ int Peer::startServer() {
 
             pthread_mutex_unlock(&_mutex_state); // End the mutex lock
 
-            // std::cout << "Run, rfd: " << rfd << std::endl;
             pMsg->p = this;
         	pMsg->rfd = rfd;
         	arg = (void*)(pMsg);
-/*        	std::cout << "Run, pMsg: " << pMsg << std::endl;
-        	std::cout << "Run, arg: " << arg << std::endl;*/
-            // arg = (void *)(&rfd);
-
-            // sendServerMessage(rfd, welcome_msg); // send a welcome message/instructions.
 
             // now create a thread for this client to intercept all incomming data from it.
             pthread_create(&threads[rfd], NULL, readTcpServer, arg);
@@ -266,8 +251,8 @@ int Peer::floodingMessage(const std::string &msg) {
     return 0;
 }
 
-int Peer::reply(int peerId, const char *msg) {
-   int status;
+int Peer::sendPeerMessage(int peerId, const char *msg) {
+    int status;
     struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
     struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
 
@@ -286,7 +271,7 @@ int Peer::reply(int peerId, const char *msg) {
     // getaddrinfo returns 0 on succes, or some other value when an error occured.
     // (translated into human readable text by the gai_gai_strerror function).
     if (status != 0)  {
-        std::cout << "[reply] getaddrinfo error" << gai_strerror(status) ;
+        std::cout << "[seendPeerMessage] getaddrinfo error" << gai_strerror(status) ;
         return -1;
     }
 
@@ -294,24 +279,22 @@ int Peer::reply(int peerId, const char *msg) {
     socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
                       host_info_list->ai_protocol);
     if (socketfd == -1) {
-        std::cout << "[reply] socket error " ;
+        std::cout << "[seendPeerMessage] socket error " ;
         return -2;
     }
 
     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1)  {
-        std::cout << "[reply] connect error" ;
+        std::cout << "[seendPeerMessage] connect error" ;
         return -3;
     }
 
-/*    char msg[MAXLEN];
-    sprintf(msg, "reply %d %d");*/
     int len;
     ssize_t bytes_sent;
     len = strlen(msg);
     bytes_sent = send(socketfd, msg, len, 0);
 
-    std::cout << "[reply] Sending complete. Closing socket...\n" << std::endl << std::endl;
+    std::cout << "[seendPeerMessage] Message sent: " << msg << std::endl << std::endl;
 
     freeaddrinfo(host_info_list);
 

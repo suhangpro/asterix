@@ -23,7 +23,7 @@ for ip in $ip_addrs; do
     curr_peer_ids=`grep $ip $1 | cut -d " " -f 1`
     for peer in $curr_peer_ids; do
         is_seller=$(($RANDOM % 2))
-        ./dummy_work.sh $peer $1 $is_seller > `printf '%s/peer.%03d' $log_dir $peer` &
+        ./run_peer $peer $1 $is_seller > `printf '%s/peer.%03d' $log_dir $peer` &
         peer_types[$n_peers]=$is_seller
         peer_ids[$n_peers]=$peer
         let n_peers=n_peers+1
