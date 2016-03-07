@@ -22,15 +22,9 @@ public:
 protected:
 	int lookUp();
 
-	int sendRequest2Neighbor(int peerId, const char *msg);
-
-	int getReply(int socketfd);
-
 	int buy();
 
-	void processMessage(int rfd) {
-		std::cout << "This is a buyer.\n";
-	}
+	void processMessage(int rfd);
 
 protected:
 	int _hopCount;

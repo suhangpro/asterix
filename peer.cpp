@@ -7,6 +7,7 @@
 #include <list>
 #include <iterator>
 #include <sstream>
+#include <algorithm>
 
 int Peer::readNetworkFile(const char *netFileName) {
 	std::ifstream in(netFileName);
@@ -194,4 +195,173 @@ int Peer::startServer() {
     }
 
     delete pMsg;
+}
+
+int Peer::floodingMessage(const std::string &msg) {
+    std::cout << msg << std::endl;
+    std::string messageType;
+    Goods goods;
+    int hopCount;
+    std::vector<int> path;
+    decodeMessage(msg, messageType, goods, hopCount, path);
+
+    hopCount--;
+    if(hopCount <= 0) {
+        std::cout << "[floodingMessage] maximum hop count reached. No more floding.\n";
+        return -1;
+    }
+
+    int status;
+    struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
+    struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
+
+    for(size_t i = 0; i < _nbPeerIds.size(); ++i) {
+        int peerId = _nbPeerIds[i];
+
+        // neighbor peer is not in the previous path, 
+        // so we flood the message to it
+        if(std::find(path.begin(), path.end(), peerId) == path.end()) {
+            // The MAN page of getaddrinfo() states "All  the other fields in the structure pointed
+            // to by hints must contain either 0 or a null pointer, as appropriate." When a struct
+            // is created in c++, it will be given a block of memory. This memory is not nessesary
+            // empty. Therefor we use the memset function to make sure all fields are NULL.
+            memset(&host_info, 0, sizeof host_info);
+
+            host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
+            host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
+
+            // Now fill up the linked list of host_info structs with google's address information.
+            status = getaddrinfo(_netIps[peerId].c_str(), _netPorts[peerId].c_str(), &host_info, &host_info_list);
+            // status = getaddrinfo("127.0.0.1", "5555", &host_info, &host_info_list);
+            // getaddrinfo returns 0 on succes, or some other value when an error occured.
+            // (translated into human readable text by the gai_gai_strerror function).
+            if (status != 0) {
+                std::cout << "[floodingMessage] getaddrinfo error" << gai_strerror(status) << std::endl;
+                return status;
+            }
+
+            int socketfd ; // The socket descripter
+            socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
+                              host_info_list->ai_protocol);
+            if (socketfd == -1) {
+              std::cout << "[floodingMessage] socket error.\n" ;
+              return socketfd;
+            }
+
+            status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
+            if (status == -1) {
+                std::cout << "[floodingMessage] connect error.\n" ;
+                return status;
+            }
+
+            std::vector<int> newPath(path);
+            newPath.push_back(peerId);
+            std::string fMsg = encodeMessage(messageType, goods, hopCount, newPath);
+            int bytes_sent = send(socketfd, fMsg.c_str(), fMsg.size(), 0);
+
+            close(socketfd);
+        }
+    }
+
+    return 0;
+}
+
+int Peer::reply(int peerId, const char *msg) {
+   int status;
+    struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
+    struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
+
+    // The MAN page of getaddrinfo() states "All  the other fields in the structure pointed
+    // to by hints must contain either 0 or a null pointer, as appropriate." When a struct
+    // is created in c++, it will be given a block of memory. This memory is not nessesary
+    // empty. Therefor we use the memset function to make sure all fields are NULL.
+    memset(&host_info, 0, sizeof host_info);
+
+    host_info.ai_family = AF_UNSPEC;     // IP version not specified. Can be both.
+    host_info.ai_socktype = SOCK_STREAM; // Use SOCK_STREAM for TCP or SOCK_DGRAM for UDP.
+
+    // Now fill up the linked list of host_info structs with google's address information.
+    status = getaddrinfo(_netIps[peerId].c_str(), _netPorts[peerId].c_str(), &host_info, &host_info_list);
+    // status = getaddrinfo("127.0.0.1", "5555", &host_info, &host_info_list);
+    // getaddrinfo returns 0 on succes, or some other value when an error occured.
+    // (translated into human readable text by the gai_gai_strerror function).
+    if (status != 0)  {
+        std::cout << "[reply] getaddrinfo error" << gai_strerror(status) ;
+        return -1;
+    }
+
+    int socketfd ; // The socket descripter
+    socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
+                      host_info_list->ai_protocol);
+    if (socketfd == -1) {
+        std::cout << "[reply] socket error " ;
+        return -2;
+    }
+
+    status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
+    if (status == -1)  {
+        std::cout << "[reply] connect error" ;
+        return -3;
+    }
+
+/*    char msg[MAXLEN];
+    sprintf(msg, "reply %d %d");*/
+    int len;
+    ssize_t bytes_sent;
+    len = strlen(msg);
+    bytes_sent = send(socketfd, msg, len, 0);
+
+    std::cout << "[reply] Sending complete. Closing socket...\n" << std::endl << std::endl;
+
+    freeaddrinfo(host_info_list);
+
+    return 0;
+}
+
+std::string Peer::encodeMessage(const std::string &msgType, Goods g, int var, const std::vector<int> &path) {
+    std::stringstream ss;
+    ss << msgType << " " << g << " " << var << " " << path.size();
+    for(size_t i = 0; i < path.size(); ++i)
+        ss << " " << path[i];
+
+    return ss.str();
+}
+
+std::string Peer::encodeMessage(const std::string &msgType, Goods g, int var, int originPeerId) {
+    std::stringstream ss;
+    ss << msgType << " " << g << " " << var << " " << 1 << " " << originPeerId;
+
+    return ss.str();
+}
+
+std::string Peer::encodeMessage(const std::string &msgType, Goods g, int var, const std::vector<int>::iterator &startIt, const std::vector<int>::iterator &endIt) {
+    std::stringstream ss;
+    ss << msgType << " " << g << " " << var << " " << endIt - startIt;
+    for(std::vector<int>::iterator it = startIt; it != endIt; ++it)
+        ss << " " << *it;
+
+    return ss.str();
+}
+
+void Peer::decodeMessage(const std::string &msg, std::string &msgType, Goods &g, int &var, std::vector<int> &path) {
+    std::stringstream ss;
+    ss << msg;
+
+    ss >> msgType;
+
+    int temp;
+    ss >> temp;
+    g = static_cast<Goods>(temp);
+
+    ss >> var;
+
+    int len;
+    ss >> len;
+
+    if( len > 0 ) {
+        path.resize(len, 0);
+
+        for(int i = 0; i < len; ++i)
+            ss >> path[i];
+    }
 }

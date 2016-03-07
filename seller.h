@@ -21,8 +21,6 @@ protected:
 
 	void randPickGoods(int amount);
 
-	int reply(int rfd, const char *msg);
-
 protected:
 	Goods _goods;
 	int _amount;

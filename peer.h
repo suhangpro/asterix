@@ -65,9 +65,19 @@ protected:
 
 	int sendServerMessage(int fd, const std::string &data);
 
+	std::string encodeMessage(const std::string &msgType, Goods g, int hopCount, const std::vector<int> &path);
+	std::string encodeMessage(const std::string &msgType, Goods g, int hopCount, int originPeerId);
+	std::string encodeMessage(const std::string &msgType, Goods g, int hopCount, const std::vector<int>::iterator &startIt, const std::vector<int>::iterator &endIt);
+
+	void decodeMessage(const std::string &msg, std::string &msgType, Goods &g, int &hopCount, std::vector<int> &path);
+
 	double randomSample() {
 		return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 	}
+
+	int reply(int peerId, const char *msg);
+
+	int floodingMessage(const std::string &msg);
 
 protected:
 	std::string _ip;
