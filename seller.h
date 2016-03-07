@@ -14,12 +14,18 @@ public:
 		randPickGoods(goodsAmount);
 	}
 
-	virtual int Run();
+	// This loop will wait for a client to connect. When the client connects, it creates a
+	// new thread for the client and starts waiting again for a new client.
+	virtual int Run() {
+		startServer();
+	}
 
 protected:
 	void processMessage(int rfd);
 
 	void randPickGoods(int amount);
+
+	int reply(int rfd, const char *msg);
 
 protected:
 	Goods _goods;

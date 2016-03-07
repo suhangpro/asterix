@@ -13,6 +13,7 @@ public:
 	Buyer(int peerId, const char *netFileName)
 	: Peer(peerId, netFileName) {
 		srand (time(NULL));
+		_isPurchaseSuccess = false;
 	}
 
 	virtual int Run();
@@ -29,6 +30,7 @@ protected:
 protected:
 	int _hopCount;
 	Goods _interestGoods;
+	bool _isPurchaseSuccess;
 
 	std::vector<int> _sellers;
 };

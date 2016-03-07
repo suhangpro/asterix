@@ -75,7 +75,7 @@ protected:
 		return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 	}
 
-	int reply(int peerId, const char *msg);
+	int sendPeerMessage(int peerId, const char *msg);
 
 	int floodingMessage(const std::string &msg);
 
@@ -85,8 +85,6 @@ protected:
 	int _peerId;
 
 	// neighbor peers
-	std::vector<std::string> _nbIps;
-	std::vector<std::string> _nbPorts;
 	std::vector<int> _nbPeerIds;
 
 	// all peers in the network

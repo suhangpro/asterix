@@ -17,12 +17,14 @@ int Buyer::Run() {
 	int iter = 0;
 	while(1) {
 		std::cout << "=========== iter " << ++iter << " ==============\n";
+        _isPurchaseSuccess = false;
 		lookUp();
 
         sleep(1);
 
-		if(_sellers.size() > 0)
+		if(_sellers.size() > 0) {
 			buy();
+        }
 
 		sleep(std::rand() % MAX_WAIT_TIME);
 	}
@@ -51,6 +53,8 @@ int Buyer::buy() {
 	int sellerId = _sellers[0];
 	std::cout << "[purchase] randomly pick a seller " << sellerId << std::endl;
 
+    std::string msg = encodeMessage("purchase", _interestGoods, -1, _peerId);
+
     int status;
     struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
     struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
@@ -70,25 +74,25 @@ int Buyer::buy() {
     // getaddrinfo returns 0 on succes, or some other value when an error occured.
     // (translated into human readable text by the gai_gai_strerror function).
     if (status != 0)  {
-    	std::cout << "[purchase] getaddrinfo error" << gai_strerror(status) ;
-    	return -1;
+        std::cout << "[buy] getaddrinfo error" << gai_strerror(status) << std::endl;
+        return -1;
     }
 
     int socketfd ; // The socket descripter
     socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
                       host_info_list->ai_protocol);
     if (socketfd == -1) {
-    	std::cout << "[purchase] socket error " ;
-    	return -2;
+        std::cout << "[buy] socket error " << std::endl;
+        return -2;
     }
+
 
     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1)  {
-    	std::cout << "[purchase] connect error" ;
-    	return -3;
+        std::cout << "[buy] connect error" ;
+        return -3;
     }
 
-    std::string msg = encodeMessage("purchase", _interestGoods, -1, _peerId);
     int bytes_sent = send(socketfd, msg.c_str(), msg.size(), 0);
 
     ssize_t bytes_recieved;
@@ -96,25 +100,30 @@ int Buyer::buy() {
     bytes_recieved = recv(socketfd, incomming_data_buffer,1000, 0);
     // If no data arrives, the program will just wait here until some data arrives.
     if (bytes_recieved == 0) {
-    	std::cout << "[purchase] Host shut down." << std::endl ;
-    	return -4;
+        std::cout << "[buy] host shut down." << std::endl ;
+        return -4;
     }
 
     if (bytes_recieved == -1) {
-    	std::cout << "[purchase] No reply!" << std::endl ;
-    	return -5;
+        std::cout << "[buy] recieve error!" << std::endl ;
+        return -5;
     }
 
     incomming_data_buffer[bytes_recieved] = '\0' ;
-    std::cout << "[purchase] Reply: " << incomming_data_buffer << std::endl;
+    std::cout << "[buy] Reply received: " << incomming_data_buffer << std::endl;
 
-    std::cout << "Buyer " << _peerId << " purchase " << goodsNames[_interestGoods] << " from Seller " << sellerId << std::endl;
+    std::string requestType;
+    Goods goods;
+    int var;
+    std::vector<int> path;
+    decodeMessage(incomming_data_buffer, requestType, goods, var, path);
+    if(requestType == "deal")
+        std::cout << "Buyer " << _peerId << " purchase " << goodsNames[_interestGoods] << " from Seller " << sellerId << std::endl;
 
-    std::cout << "[purchase] Receiving complete. Closing socket...\n" << std::endl << std::endl;
+    // freeaddrinfo(host_info_list);
+    close(socketfd);
 
-    freeaddrinfo(host_info_list);
-
-    return 0;
+    return sellerId;
 }
 
 void Buyer::processMessage(int rfd) {
@@ -142,7 +151,8 @@ void Buyer::processMessage(int rfd) {
         return;
     }
 
-    std::cout << buf << std::endl;
+    std::cout << "[Buyer - processMessage] " << buf << std::endl;
+
     std::string requestType;
     Goods goods;
     int var;
@@ -150,8 +160,6 @@ void Buyer::processMessage(int rfd) {
     decodeMessage(buf, requestType, goods, var, path);
 
     pthread_mutex_lock(&_mutex_state);
-
-    std::cout << "[Buyer - processMessage] " << buf << std::endl;
 
     if(requestType == "purchase") {
         std::cout << "[Buyer - processMessage] There must be something wrong. A buyer should not receive this purchase request.\n";
@@ -165,8 +173,10 @@ void Buyer::processMessage(int rfd) {
         else {       
             int lastNbPeerId = path.back(); 
             std::string msg = encodeMessage("reply", goods, sellerPeerId, path.begin(), path.end() - 1);
-            reply(lastNbPeerId, msg.c_str());
+            sendPeerMessage(lastNbPeerId, msg.c_str());
         }
+    } else if(requestType == "deal") {
+        _isPurchaseSuccess = true;
     }
 
    _activeConnect--;

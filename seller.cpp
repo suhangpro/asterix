@@ -8,17 +8,10 @@ void Seller::randPickGoods(int amount) {
     std::cout << "I am now selling " << goodsNames[_goods] << " of " << _amount << " items.\n";
 }
 
-// This loop will wait for a client to connect. When the client connects, it creates a
-// new thread for the client and starts waiting again for a new client.
-int Seller::Run() {
-	startServer();
-}
-
 /// This function runs in a thread for every client, and reads incomming data.
 /// It also writes the incomming data to all other clients.
 void Seller::processMessage(int rfd) {
-	std::cout << "This is a seller.\n";		
-	std::cout << "I am selling " << goodsNames[_goods] << " of " << _amount << " items.\n";
+	std::cout << "This is a seller. I am selling " << goodsNames[_goods] << " of " << _amount << " items.\n";
 
     char buf[MAXLEN];
     int buflen;
@@ -29,15 +22,11 @@ void Seller::processMessage(int rfd) {
     pthread_mutex_lock(&_mutex_state);
     FD_CLR(rfd, &_the_state);      // free fd's from  clients
     pthread_mutex_unlock(&_mutex_state);
-    close(rfd);
 
     if (buflen <= 0)
     {
-        std::cout << "client disconnected. Clearing fd. " << rfd << std::endl ;
-/*        pthread_mutex_lock(&_mutex_state);
-        FD_CLR(rfd, &_the_state);      // free fd's from  clients
-        pthread_mutex_unlock(&_mutex_state);
-        close(rfd);*/
+        std::cout << "[Seller-processMessage] Client disconnected." << std::endl ;
+        close(rfd);
         pthread_exit(NULL);
         return;
     }
@@ -45,7 +34,7 @@ void Seller::processMessage(int rfd) {
     // process the purchase request
     // check Fish 0
     // purchase Salt 1
-    std::cout << buf << std::endl;
+    std::cout << "[Seller-processMessage] " << buf << std::endl;
     std::string requestType;
     Goods goods;
     int var;
@@ -59,11 +48,16 @@ void Seller::processMessage(int rfd) {
 
     pthread_mutex_lock(&_mutex_state);
 
+    bool isCloseSocket = true;
+
     if(requestType == "purchase") {
         if(goods == _goods) {
         	if(_amount > 0) {
-        		reply(originPeerId, "DEAL");
+                std::string msg = encodeMessage("deal", _goods, -1, -1);
+        		// sendPeerMessage(originPeerId, msg.c_str());
+                reply(rfd, msg.c_str());
         		_amount--;
+                isCloseSocket = false;
 
         		if(_amount == 0) {
                     std::cout << goodsNames[_goods] << " seld out.\n";
@@ -75,7 +69,7 @@ void Seller::processMessage(int rfd) {
     else if(requestType == "look_up") {
     	if(goods == _goods && _amount > 0) {
             std::string msg = encodeMessage("reply", _goods, _peerId, path.begin(), path.end() - 1);
-    		reply(lastNbPeerId, msg.c_str());
+    		sendPeerMessage(lastNbPeerId, msg.c_str());
         }
         else {
         	floodingMessage(buf);
@@ -84,28 +78,24 @@ void Seller::processMessage(int rfd) {
     else if(requestType == "reply") {
         int sellerPeerId = var;
         std::string msg = encodeMessage("reply", goods, sellerPeerId, path.begin(), path.end() - 1);
-        reply(lastNbPeerId, msg.c_str());
+        sendPeerMessage(lastNbPeerId, msg.c_str());
     } 
     else {
         std::cout << "Unrecognized request type " << requestType << std::endl;
     }
-/*        else {
-    	reply(rfd, "I do not have this goods.");
-    }*/
 
-   _activeConnect--;
+    _activeConnect--;
 
     pthread_mutex_unlock(&_mutex_state);
 
-/*        std::cout << rfd << std::endl;
-    std::cout << buflen << std::endl;
-    std::cout << buf << std::endl;
-    std::cout << "Closing the socket and exist the thread.\n";*/
+    std::cout << std::endl;
 
-    // close(rfd);
+    if(isCloseSocket)
+        close(rfd);
+
     pthread_exit(NULL);
 }
 
-/*int Seller::reply(int rfd, const char *msg) {
+int Seller::reply(int rfd, const char *msg) {
 	return sendServerMessage(rfd, msg);
-}*/
+}
