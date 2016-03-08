@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 const int MAXLEN = 1024 ;   // Max length of a message.
-const int MAXFD = 7 ;       // Maximum file descriptors to use. Equals maximum clients.
+const int MAXFD = 100 ;       // Maximum file descriptors to use. Equals maximum clients.
 
 enum Goods{Fish = 0, Salt, Boars, GOODS_COUNT};
 static const char *goodsNames[] = {"Fish", "Salt", "Boars"};
@@ -22,12 +22,6 @@ void *readTcpServer(void *arg);
 
 class Peer{
 public:
-	Peer( const std::string &ip, const std::string &port, int peerId)
-		: _ip(ip), _port(port)
-	{
-		_peerId = peerId;
-	}
-
 	Peer(int peerId, const char *networkFileName) {
 		_peerId = peerId;
 
