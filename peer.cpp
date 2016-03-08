@@ -119,7 +119,7 @@ int Peer::establishServerConnection() {
 	    inet_ntop(AF_INET6, &s->sin6_addr, ipstr, sizeof ipstr);
 	}
 
-	std::cout << "[peer " << _peerId << "]: Connection accepted from "  << ipstr <<  " using port " << port << std::endl;
+	// std::cout << "[peer " << _peerId << "]: Connection accepted from "  << ipstr <<  " using port " << port << std::endl;
 
     return new_sd;
 }
@@ -154,10 +154,10 @@ int Peer::startServer() {
 
         if (rfd >= 0)
         {
-            std::cout << "Client connected. Using file desciptor " << rfd << std::endl;
+            // std::cout << "Client connected. Using file desciptor " << rfd << std::endl;
             if (_activeConnect > MAXFD)
             {
-                std::cout << "To many clients trying to connect." << std::endl;
+                std::cout << "[startServer]: To many clients trying to connect." << std::endl;
                 close(rfd);
                 continue;
             }
@@ -183,7 +183,9 @@ int Peer::startServer() {
 }
 
 int Peer::floodingMessage(const std::string &msg) {
-    std::cout << msg << std::endl;
+    std::cout << "[floodingMessage]: ";
+    printMessage(msg);// << msg << std::endl;
+
     std::string messageType;
     Goods goods;
     int hopCount;
@@ -248,6 +250,8 @@ int Peer::floodingMessage(const std::string &msg) {
         }
     }
 
+    std::cout << std::endl;
+
     return 0;
 }
 
@@ -271,7 +275,7 @@ int Peer::sendPeerMessage(int peerId, const char *msg) {
     // getaddrinfo returns 0 on succes, or some other value when an error occured.
     // (translated into human readable text by the gai_gai_strerror function).
     if (status != 0)  {
-        std::cout << "[seendPeerMessage] getaddrinfo error" << gai_strerror(status) ;
+        std::cout << "[seendPeerMessage] getaddrinfo error" << gai_strerror(status) << std::endl;
         return -1;
     }
 
@@ -279,13 +283,13 @@ int Peer::sendPeerMessage(int peerId, const char *msg) {
     socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
                       host_info_list->ai_protocol);
     if (socketfd == -1) {
-        std::cout << "[seendPeerMessage] socket error " ;
+        std::cout << "[seendPeerMessage] socket error " << std::endl;
         return -2;
     }
 
     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1)  {
-        std::cout << "[seendPeerMessage] connect error" ;
+        std::cout << "[seendPeerMessage] connect error" << std::endl;
         return -3;
     }
 
@@ -294,9 +298,11 @@ int Peer::sendPeerMessage(int peerId, const char *msg) {
     len = strlen(msg);
     bytes_sent = send(socketfd, msg, len, 0);
 
-    std::cout << "[seendPeerMessage] Message sent: " << msg << std::endl << std::endl;
+    std::cout << "[seendPeerMessage] Message sent: ";// << msg << std::endl << std::endl;
+    printMessage(msg);
 
-    freeaddrinfo(host_info_list);
+    // freeaddrinfo(host_info_list);
+    close(socketfd);
 
     return 0;
 }
@@ -346,5 +352,44 @@ void Peer::decodeMessage(const std::string &msg, std::string &msgType, Goods &g,
 
         for(int i = 0; i < len; ++i)
             ss >> path[i];
+    }
+}
+
+void Peer::printMessage(const std::string &msg) {
+    // std::cout << "[printMessage] msg: " << msg << std::endl;
+    std::string requestType;
+    Goods goods;
+    int var;
+    std::vector<int> path;
+    decodeMessage(msg, requestType, goods, var, path);
+
+    if(requestType == "look_up") {
+        std::cout << "look_up request from peer " << path[0] << " to purchase " << goodsNames[goods];
+        std::cout << ". hopCount: " << var << ". Path: ";
+        for(size_t i = 0; i < path.size() - 1; ++i )
+            std::cout << path[i] << "->";
+        std::cout << path.back() << std::endl;
+    }
+    else if(requestType == "reply") {
+        std::cout << "reply request from peer " << var;
+
+        if(!path.empty())
+            std::cout << " to peer " << path.front();
+        std::cout << " of purchasing " << goodsNames[goods];
+
+        if(path.empty())
+            std::cout << ". Reply reached the buyer." << std::endl;
+        else {
+            std::cout << ". Path: ";
+            for(size_t i = 0; i < path.size() - 1; ++i )
+                std::cout << path[i] << "->";
+            std::cout << path.back() << std::endl;
+        }
+    }
+    else if(requestType == "purchase") {
+        std::cout << "purchase request from peer " << path.front() << " to buy " << goodsNames[goods] << "." << std::endl;
+    }
+    else if(requestType == "deal") {
+        std::cout << "deal of purchasing " << goodsNames[goods] << " made.\n";
     }
 }

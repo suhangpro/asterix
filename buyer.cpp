@@ -20,7 +20,7 @@ int Buyer::Run() {
         _isPurchaseSuccess = false;
 		lookUp();
 
-        sleep(1);
+        sleep(3);
 
 		if(_sellers.size() > 0) {
 			buy();
@@ -89,7 +89,7 @@ int Buyer::buy() {
 
     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1)  {
-        std::cout << "[buy] connect error" ;
+        std::cout << "[buy] connect error" << std::endl;
         return -3;
     }
 
@@ -110,7 +110,8 @@ int Buyer::buy() {
     }
 
     incomming_data_buffer[bytes_recieved] = '\0' ;
-    std::cout << "[buy] Reply received: " << incomming_data_buffer << std::endl;
+    std::cout << "[buy] Reply received: ";
+    printMessage(incomming_data_buffer);
 
     std::string requestType;
     Goods goods;
@@ -127,7 +128,7 @@ int Buyer::buy() {
 }
 
 void Buyer::processMessage(int rfd) {
-    std::cout << "I am a buyer. I am interested in " << goodsNames[_interestGoods] << std::endl;
+    std::cout << "I am a buyer (peer " << _peerId << "). I am interested in " << goodsNames[_interestGoods] << std::endl;
 
     char buf[MAXLEN];
     int buflen;
@@ -142,7 +143,7 @@ void Buyer::processMessage(int rfd) {
 
     if (buflen <= 0)
     {
-        std::cout << "client disconnected. Clearing fd. " << rfd << std::endl ;
+        std::cout << "[Buyer - processMessage] client disconnected. Clearing fd. " << rfd << std::endl ;
 /*        pthread_mutex_lock(&_mutex_state);
         FD_CLR(rfd, &_the_state);      // free fd's from  clients
         pthread_mutex_unlock(&_mutex_state);
@@ -151,7 +152,8 @@ void Buyer::processMessage(int rfd) {
         return;
     }
 
-    std::cout << "[Buyer - processMessage] " << buf << std::endl;
+    std::cout << "[Buyer - processMessage] ";
+    printMessage(buf);// << buf << std::endl;
 
     std::string requestType;
     Goods goods;
@@ -182,11 +184,6 @@ void Buyer::processMessage(int rfd) {
    _activeConnect--;
 
     pthread_mutex_unlock(&_mutex_state);
-
-/*        std::cout << rfd << std::endl;
-    std::cout << buflen << std::endl;
-    std::cout << buf << std::endl;
-    std::cout << "Closing the socket and exist the thread.\n";*/
 
     // close(rfd);
     pthread_exit(NULL);
