@@ -20,7 +20,7 @@ grep -Eo "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`
 if [ ! -d logs ]; then
     mkdir logs
 fi
-exp_id=$((`ls logs | egrep -o '[0-9]{3}' | sort -n | tail -n 1`+1))
+exp_id=$((`ls logs | egrep -o '[0-9]{3}' | sort -n | tail -n 1 | sed 's/^0*//'`+1))
 log_dir=`printf 'logs/log.%03d' $exp_id`
 mkdir $log_dir
 
