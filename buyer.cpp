@@ -119,7 +119,7 @@ int Buyer::buy() {
     std::vector<int> path;
     decodeMessage(incomming_data_buffer, requestType, goods, var, path);
     if(requestType == "deal")
-        std::cout << "Buyer " << _peerId << " purchase " << goodsNames[_interestGoods] << " from Seller " << sellerId << std::endl;
+        std::cout << "Peer " << _peerId << " #purchase# " << goodsNames[_interestGoods] << " from peer " << sellerId << std::endl;
 
     // freeaddrinfo(host_info_list);
     close(socketfd);
