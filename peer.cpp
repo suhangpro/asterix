@@ -81,7 +81,7 @@ int Peer::setUpServer() {
 
     if(ret != 0)
     {
-        std::cout << "[setUpServer error]: " << strerror(errno) << std::endl << std::endl;
+        std::cout << "[setUpServer error] " << strerror(errno) << std::endl << std::endl;
         return -1 ;
     }
 
@@ -157,7 +157,7 @@ int Peer::startServer() {
             // std::cout << "Client connected. Using file desciptor " << rfd << std::endl;
             if (_activeConnect > MAXFD)
             {
-                std::cout << "[startServer]: To many clients trying to connect." << std::endl;
+                std::cout << "[startServer error] To many clients trying to connect." << std::endl;
                 close(rfd);
                 continue;
             }
