@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
+#include <cstdio>
 #include <fcntl.h>
 
 int Buyer::Run() {
@@ -17,7 +18,7 @@ int Buyer::Run() {
 	int iter = 0;
 	while(1) {
 		std::cout << "=========== iter " << ++iter << " ==============\n";
-        _isPurchaseSuccess = false;
+
 		lookUp();
 
         sleep(3);
@@ -43,15 +44,23 @@ int Buyer::lookUp() {
 
 	floodingMessage(msg);
 
+    std::printf("[buyer-%d] I want to buy %s.\n", _peerId, goodsNames[_interestGoods]);
+
 	return 0;
 }
 
 int Buyer::buy() {
-	if(!_sellers.empty())
+	if(!_sellers.empty()) {
+        std::printf("[buyer-%d] ", _peerId);
+        std::printf("Seller %d", _sellers.front());
+        for(size_t i = 1; i < _sellers.size(); ++i )
+            std::printf(", Seller %d", _sellers[i]);
+        std::printf(" all want to sell me %s. ", goodsNames[_interestGoods]);
 		std::random_shuffle(_sellers.begin(), _sellers.end());
+    }
 
 	int sellerId = _sellers[0];
-	std::cout << "[purchase] randomly pick a seller " << sellerId << std::endl;
+	std::cout << "I choose seller " << sellerId << std::endl;
 
     std::string msg = encodeMessage("purchase", _interestGoods, -1, _peerId);
 
@@ -95,6 +104,10 @@ int Buyer::buy() {
 
     int bytes_sent = send(socketfd, msg.c_str(), msg.size(), 0);
 
+/*    // set the socket non-blocking
+    int flags = fcntl(socketfd, F_GETFL, 0);
+    fcntl(socketfd, F_SETFL, flags | O_NONBLOCK);*/
+
     ssize_t bytes_recieved;
     char incomming_data_buffer[1000];
     bytes_recieved = recv(socketfd, incomming_data_buffer,1000, 0);
@@ -110,8 +123,9 @@ int Buyer::buy() {
     }
 
     incomming_data_buffer[bytes_recieved] = '\0' ;
-    std::cout << "[buy] Reply received: ";
-    printMessage(incomming_data_buffer);
+
+    /*std::cout << "[buy] Reply received: ";
+    printMessage(incomming_data_buffer);*/
 
     std::string requestType;
     Goods goods;
@@ -119,7 +133,9 @@ int Buyer::buy() {
     std::vector<int> path;
     decodeMessage(incomming_data_buffer, requestType, goods, var, path);
     if(requestType == "deal")
-        std::cout << "Peer " << _peerId << " #purchase# " << goodsNames[_interestGoods] << " from peer " << sellerId << std::endl;
+        std::printf("[buyer-%d] I just #bought# %s from seller %d. Yay!\n", _peerId, goodsNames[_interestGoods], sellerId);
+    else if(requestType == "fail_deal")
+        std::printf("[buyer-%d] Seller %d does't have %s anymore.\n", _peerId, sellerId, goodsNames[_interestGoods]);
 
     // freeaddrinfo(host_info_list);
     close(socketfd);
@@ -128,7 +144,7 @@ int Buyer::buy() {
 }
 
 void Buyer::processMessage(int rfd) {
-    std::cout << "I am a buyer (peer " << _peerId << "). I am interested in " << goodsNames[_interestGoods] << std::endl;
+    // std::cout << "I am a buyer (peer " << _peerId << "). I am interested in " << goodsNames[_interestGoods] << std::endl;
 
     char buf[MAXLEN];
     int buflen;
@@ -152,8 +168,8 @@ void Buyer::processMessage(int rfd) {
         return;
     }
 
-    std::cout << "[Buyer - processMessage] ";
-    printMessage(buf);// << buf << std::endl;
+/*    std::cout << "[Buyer - processMessage] ";
+    printMessage(buf);// << buf << std::endl;*/
 
     std::string requestType;
     Goods goods;
@@ -167,18 +183,28 @@ void Buyer::processMessage(int rfd) {
         std::cout << "[Buyer - processMessage] There must be something wrong. A buyer should not receive this purchase request.\n";
     } else if(requestType == "look_up") {
         floodingMessage(buf);
+
+        std::printf("[messager-%d] Buyer %d wants to buy %s. Hop count: %d. Path is ", _peerId, path.front(), goodsNames[goods], var);
+        for(size_t i = 0; i < path.size() - 1; ++i)
+            std::printf("%d->", path[i]);
+        std::printf("%d.\n", path.back());
     } else if(requestType == "reply") {
         int sellerPeerId = var;
         if(path.empty()) {
             _sellers.push_back(sellerPeerId);
+
+            std::printf("[buyer-%d] Seller %d replies it's selling %s.\n", _peerId, sellerPeerId, goodsNames[goods]);
         }
         else {       
             int lastNbPeerId = path.back(); 
             std::string msg = encodeMessage("reply", goods, sellerPeerId, path.begin(), path.end() - 1);
             sendPeerMessage(lastNbPeerId, msg.c_str());
+
+            std::printf("[messager-%d] Seller %d wants to sell %s to buyer %d. Path back is ", _peerId, sellerPeerId, goodsNames[goods], path.front());
+            for(size_t i = path.size() - 1; i > 0; --i)
+                std::printf("%d->", path[i]);
+            std::printf("%d.\n", path[0]);
         }
-    } else if(requestType == "deal") {
-        _isPurchaseSuccess = true;
     }
 
    _activeConnect--;

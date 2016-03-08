@@ -1,17 +1,20 @@
 #include "seller.h"
 #include <sstream>
 #include <cstring>
+#include <cstdio>
 
 void Seller::randPickGoods(int amount) {
 	_amount = amount;
 	_goods = static_cast<Goods>(std::rand() % GOODS_COUNT);
-    std::cout << "I am now selling " << goodsNames[_goods] << ". " << _amount << " items left.\n";
+    // std::cout << "I am now selling " << goodsNames[_goods] << ". " << _amount << " items left.\n";
+    // std::cout << "[seller-" << _peerId << "] I just got _amount " << goodsNames[_goods] << ".\n";
+    std::printf("[seller-%d] I just got %d %s.\n", _peerId, _amount, goodsNames[_goods]);
 }
 
 /// This function runs in a thread for every client, and reads incomming data.
 /// It also writes the incomming data to all other clients.
 void Seller::processMessage(int rfd) {
-	std::cout << "This is a seller (peer " << _peerId << "). I am selling " << goodsNames[_goods] << ". " << _amount << " items left.\n";
+	// std::cout << "This is a seller (peer " << _peerId << "). I am selling " << goodsNames[_goods] << ". " << _amount << " items left.\n";
 
     char buf[MAXLEN];
     int buflen;
@@ -25,7 +28,7 @@ void Seller::processMessage(int rfd) {
 
     if (buflen <= 0)
     {
-        std::cout << "[Seller-processMessage] Client disconnected." << std::endl ;
+        std::cout << "[seller-" << _peerId << "] Client disconnected." << std::endl ;
         close(rfd);
         pthread_exit(NULL);
         return;
@@ -34,8 +37,8 @@ void Seller::processMessage(int rfd) {
     // process the purchase request
     // check Fish 0
     // purchase Salt 1
-    std::cout << "[Seller-processMessage] ";// << buf << std::endl;
-    printMessage(buf);
+    // std::cout << "[seller-" << _peerId << "] ";// << buf << std::endl;
+    // printMessage(buf);
 
     std::string requestType;
     Goods goods;
@@ -54,18 +57,36 @@ void Seller::processMessage(int rfd) {
         if(goods == _goods) {
         	if(_amount > 0) {
                 std::string msg = encodeMessage("deal", _goods, -1, -1);
+                if(_amount > 1) {
+                    std::printf("[seller-%d] I just #sold# %s to buyer %d. I still have %d %s.\n", _peerId, goodsNames[_goods], path.front(), _amount--, goodsNames[_goods]);
+                }
+                else {
+                    std::printf("[seller-%d] I just #sold# %s to buyer %d. This is the last one.\n", _peerId, goodsNames[_goods], path.front());
+                }
 
-                std::cout << "Deal made.\n================================== end of the deal ==========================================\n";
+                std::cout << "================================== end of the deal ==========================================\n";
         		// sendPeerMessage(originPeerId, msg.c_str());
                 reply(rfd, msg.c_str());
         		_amount--;
                 isCloseSocket = false;
 
         		if(_amount == 0) {
-                    std::cout << goodsNames[_goods] << " seld out.\n";
+                    // std::cout << goodsNames[_goods] << " seld out.\n";
         			randPickGoods(goodsAmount);
                 }
         	}
+            else {
+                std::string msg = encodeMessage("fail_deal", _goods, -1, -1);
+                reply(rfd, msg.c_str());
+
+                std::printf("[seller-%d] Buyer %d wants to buy %s from me. Too late.\n", _peerId, path.front(), goodsNames[goods]);
+            }
+        }
+        else {
+            std::string msg = encodeMessage("fail_deal", _goods, -1, -1);
+            reply(rfd, msg.c_str());
+
+            std::printf("[seller-%d] Buyer %d wants to buy %s from me. Too late.\n", _peerId, path.front(), goodsNames[goods]);
         }
     } 
     else if(requestType == "look_up") {
@@ -73,18 +94,33 @@ void Seller::processMessage(int rfd) {
             std::cout << "\n============================ start of the deal (maybe) ====================================\n";
             std::string msg = encodeMessage("reply", _goods, _peerId, path.begin(), path.end() - 1);
     		sendPeerMessage(lastNbPeerId, msg.c_str());
+
+            std::printf("[seller-%d] Trying to sell %s to buyer %d. Path back is ", _peerId, goodsNames[_goods], path.front());
+            for(size_t i = path.size() - 1; i > 0; --i)
+                std::printf("%d->", path[i]);
+            std::printf("%d.\n", path[0]);
         }
         else {
         	floodingMessage(buf);
+
+            std::printf("[messager-%d] Buyer %d wants to buy %s. Hop count: %d. Path is ", _peerId, path.front(), goodsNames[goods], var);
+            for(size_t i = 0; i < path.size() - 1; ++i)
+                std::printf("%d->", path[i]);
+            std::printf("%d.\n", path.back());
         }
     } 
     else if(requestType == "reply") {
         int sellerPeerId = var;
         std::string msg = encodeMessage("reply", goods, sellerPeerId, path.begin(), path.end() - 1);
         sendPeerMessage(lastNbPeerId, msg.c_str());
+
+        std::printf("[messager-%d] Seller %d wants to sell %s to buyer %d. Path back is ", _peerId, sellerPeerId, goodsNames[goods], path.front());
+        for(size_t i = path.size() - 1; i > 0; --i)
+            std::printf("%d->", path[i]);
+        std::printf("%d.\n", path[0]);
     } 
     else {
-        std::cout << "Unrecognized request type " << requestType << std::endl;
+        std::cout << "[Error] Unrecognized request type " << requestType << std::endl;
     }
 
     _activeConnect--;

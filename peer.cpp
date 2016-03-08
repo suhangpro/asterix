@@ -183,8 +183,8 @@ int Peer::startServer() {
 }
 
 int Peer::floodingMessage(const std::string &msg) {
-    std::cout << "[floodingMessage]: ";
-    printMessage(msg);// << msg << std::endl;
+/*    std::cout << "[floodingMessage]: ";
+    printMessage(msg);// << msg << std::endl;*/
 
     std::string messageType;
     Goods goods;
@@ -194,7 +194,7 @@ int Peer::floodingMessage(const std::string &msg) {
 
     hopCount--;
     if(hopCount <= 0) {
-        std::cout << "[floodingMessage] maximum hop count reached. No more floding.\n";
+        // std::cout << "[floodingMessage] maximum hop count reached. No more floding.\n";
         return -1;
     }
 
@@ -298,8 +298,8 @@ int Peer::sendPeerMessage(int peerId, const char *msg) {
     len = strlen(msg);
     bytes_sent = send(socketfd, msg, len, 0);
 
-    std::cout << "[seendPeerMessage] Message sent: ";// << msg << std::endl << std::endl;
-    printMessage(msg);
+/*    std::cout << "[seendPeerMessage] Message sent: ";// << msg << std::endl << std::endl;
+    printMessage(msg);*/
 
     // freeaddrinfo(host_info_list);
     close(socketfd);
@@ -355,7 +355,7 @@ void Peer::decodeMessage(const std::string &msg, std::string &msgType, Goods &g,
     }
 }
 
-void Peer::printMessage(const std::string &msg) {
+/*void Peer::printMessage(const std::string &msg) {
     // std::cout << "[printMessage] msg: " << msg << std::endl;
     std::string requestType;
     Goods goods;
@@ -392,4 +392,7 @@ void Peer::printMessage(const std::string &msg) {
     else if(requestType == "deal") {
         std::cout << "deal of purchasing " << goodsNames[goods] << " made.\n";
     }
-}
+    else if(requestType == "fail_deal") {
+        std::cout << "fail of deal of purchasing " << goodsNames[goods] << " made.\n";
+    }
+}*/

@@ -71,7 +71,7 @@ protected:
 
 	void decodeMessage(const std::string &msg, std::string &msgType, Goods &g, int &hopCount, std::vector<int> &path);
 
-	void printMessage(const std::string &msg);
+	// void printMessage(const std::string &msg);
 
 	double randomSample() {
 		return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
