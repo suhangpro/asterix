@@ -58,9 +58,9 @@ void Seller::processMessage(int rfd) {
         	if(_amount > 0) {
 //                std::cout << "================================== end of the deal ==========================================\n";
         		// sendPeerMessage(originPeerId, msg.c_str());
-                reply(rfd, msg.c_str());
-
                 std::string msg = encodeMessage("deal", _goods, -1, -1);
+                reply(rfd, msg.c_str());
+                
                 if(_amount > 1) {
                     std::printf("[  seller-%03d] I just #sold# %s to peer #%d. I still have %d %s.\n", _peerId, goodsNames[_goods], path.front(), _amount - 1, goodsNames[_goods]);
                 }
