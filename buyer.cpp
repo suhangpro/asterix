@@ -13,11 +13,11 @@ int Buyer::Run() {
 	pthread_t serverThread;
 
 	pthread_create(&serverThread, NULL, &startBuyerServer, (void*)this);
-	std::cout << "server is running.\n";
+	//std::cout << "server is running.\n";
 
 	int iter = 0;
 	while(1) {
-		std::cout << "=========== iter " << ++iter << " ==============\n";
+	//	std::cout << "=========== iter " << ++iter << " ==============\n";
 
 		lookUp();
 
@@ -44,23 +44,23 @@ int Buyer::lookUp() {
 
 	floodingMessage(msg);
 
-    std::printf("[buyer-%d] I want to buy %s.\n", _peerId, goodsNames[_interestGoods]);
+    std::printf("[   buyer-%03d] I want to buy %s.\n", _peerId, goodsNames[_interestGoods]);
 
 	return 0;
 }
 
 int Buyer::buy() {
 	if(!_sellers.empty()) {
-        std::printf("[buyer-%d] ", _peerId);
-        std::printf("Seller %d", _sellers.front());
+        std::printf("[   buyer-%03d] ", _peerId);
+        std::printf("Peer #%d", _sellers.front());
         for(size_t i = 1; i < _sellers.size(); ++i )
-            std::printf(", Seller %d", _sellers[i]);
-        std::printf(" all want to sell me %s. ", goodsNames[_interestGoods]);
+            std::printf(", #%d", _sellers[i]);
+        std::printf(" want to sell me %s. ", goodsNames[_interestGoods]);
 		std::random_shuffle(_sellers.begin(), _sellers.end());
     }
 
 	int sellerId = _sellers[0];
-	std::cout << "I choose seller " << sellerId << std::endl;
+	std::cout << "I choose peer #" << sellerId << "! "<<std::endl;
 
     std::string msg = encodeMessage("purchase", _interestGoods, -1, _peerId);
 
@@ -133,9 +133,9 @@ int Buyer::buy() {
     std::vector<int> path;
     decodeMessage(incomming_data_buffer, requestType, goods, var, path);
     if(requestType == "deal")
-        std::printf("[buyer-%d] I just #bought# %s from seller %d. Yay!\n", _peerId, goodsNames[_interestGoods], sellerId);
+        std::printf("[   buyer-%03d] I just #bought# %s from peer #%d. Yay!\n", _peerId, goodsNames[_interestGoods], sellerId);
     else if(requestType == "fail_deal")
-        std::printf("[buyer-%d] Seller %d does't have %s anymore.\n", _peerId, sellerId, goodsNames[_interestGoods]);
+        std::printf("[   buyer-%03d] Peer #%d doesn't have %s anymore :(\n", _peerId, sellerId, goodsNames[_interestGoods]);
 
     // freeaddrinfo(host_info_list);
     close(socketfd);
@@ -184,7 +184,8 @@ void Buyer::processMessage(int rfd) {
     } else if(requestType == "look_up") {
         floodingMessage(buf);
 
-        std::printf("[messager-%d] Buyer %d wants to buy %s. Hop count: %d. Path is ", _peerId, path.front(), goodsNames[goods], var);
+        //std::printf("[messager-%03d] Peer #%d wants to buy %s. Hop count: %d. Path is ", _peerId, path.front(), goodsNames[goods], var);
+        std::printf("[messager-%03d] Peer #%d wants to buy %s. Path is ", _peerId, path.front(), goodsNames[goods]);
         for(size_t i = 0; i < path.size() - 1; ++i)
             std::printf("%d->", path[i]);
         std::printf("%d.\n", path.back());
@@ -193,14 +194,14 @@ void Buyer::processMessage(int rfd) {
         if(path.empty()) {
             _sellers.push_back(sellerPeerId);
 
-            std::printf("[buyer-%d] Seller %d replies it's selling %s.\n", _peerId, sellerPeerId, goodsNames[goods]);
+            std::printf("[   buyer-%03d] Peer #%d replies it's selling %s.\n", _peerId, sellerPeerId, goodsNames[goods]);
         }
         else {       
             int lastNbPeerId = path.back(); 
             std::string msg = encodeMessage("reply", goods, sellerPeerId, path.begin(), path.end() - 1);
             sendPeerMessage(lastNbPeerId, msg.c_str());
 
-            std::printf("[messager-%d] Seller %d wants to sell %s to buyer %d. Path back is ", _peerId, sellerPeerId, goodsNames[goods], path.front());
+            std::printf("[messager-%03d] Peer #%d wants to sell %s to peer #%d. Path back is ", _peerId, sellerPeerId, goodsNames[goods], path.front());
             for(size_t i = path.size() - 1; i > 0; --i)
                 std::printf("%d->", path[i]);
             std::printf("%d.\n", path[0]);

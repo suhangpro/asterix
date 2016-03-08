@@ -6,14 +6,14 @@
 
  6. [buyer-#id]     I want to buy Y.                            (to all neighbors) 
  7. [buyer-#id]     P replies it's selling Y.                   (to self)
- 8. [buyer-#id]     P1...Pn all want to sell me Y, I choose P!  (to P directly) 
+ 8. [buyer-#id]     P1...Pn want to sell me Y, I choose P!      (to P directly) 
  9. [buyer-#id]     I just #bought# Y from P. Yay!              (to self)
-10. [buyer-#id]     P doesn't have Y anymore.                   (to self)
+10. [buyer-#id]     P doesn't have Y anymore :(                   (to self)
 
 11. [messager-#id]  P wants to buy Y. Path is ...               (to neighbors not on path)      # path should include current peer as the last node
 12. [messager-#id]  P' wants to sell Y to P. Path back is ...   (to upstream on path to P)      # path should NOT include current peer
 
-assertion 1: count('#sold#') == count('#bought#')		# relevant message types: 3,4,9
-assertion 2: foreach seller: {goods got} >= {goods sold}  	# relevant message types: 1,3,4
+assertion 1: count('#sold#') == count('#bought#')		        # relevant message types: 3,4,9
+assertion 2: foreach seller: {goods got} >= {goods sold}  	    # relevant message types: 1,3,4
 assertion 3: foreach buyer: {goods wanted} >= {goods bought} 	# relevant message types: 6,9
 

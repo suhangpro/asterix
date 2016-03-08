@@ -250,7 +250,7 @@ int Peer::floodingMessage(const std::string &msg) {
         }
     }
 
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     return 0;
 }
