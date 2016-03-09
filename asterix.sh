@@ -64,8 +64,10 @@ function kill_peers() {
     # create summary log by concatenating all peer logs
     cat $log_dir/peer.stdout.* > $log_dir/summary
     cat $log_dir/peer.stderr.* > $log_dir/summary.err
-    cat logs/peer_time_* > $log_dir/summary.time
-    rm -f logs/peer_time_*
+    if [ `find logs -name "peer_time_*" | wc -l` -gt 0 ]; then
+        cat logs/peer_time_* > $log_dir/summary.time
+        rm logs/peer_time_*
+    fi
     exit
 }
 
