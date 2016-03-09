@@ -3,3 +3,4 @@
 *.key
 generate_graph
 run_peer
+ip.conf

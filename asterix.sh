@@ -7,12 +7,17 @@ if [ $# -lt 1 ]; then
 fi
 
 # Get all valid ip addresses (including local loopback)
+# ip address can be put in ip.conf, otherwise will be looked up with ifconfig
 # This script will pick the peers that have ip addresses associated with 
 # the current machine and deploy them
-# Note: 127.0.0.1 will be picked up as local by all machines
-ip_addrs=`ifconfig  | \
-grep -Eo "inet addr:([0-9]{1,3}[\.]){3}[0-9]{1,3}" | \
-grep -Eo "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`
+# Note: 127.0.0.1 will be picked up by ifconfig
+if [ -f ip.conf ]; then
+    ip_addrs=`cat ip.conf`
+else
+    ip_addrs=`ifconfig  | \
+    grep -Eo "inet addr:([0-9]{1,3}[\.]){3}[0-9]{1,3}" | \
+    grep -Eo "([0-9]{1,3}[\.]){3}[0-9]{1,3}"`
+fi
 
 # logs are saved in logs/log.xxx/peer.yyy
 # xxx is an incremental index for sessions, yyy indicates peer id
@@ -59,6 +64,8 @@ function kill_peers() {
     # create summary log by concatenating all peer logs
     cat $log_dir/peer.stdout.* > $log_dir/summary
     cat $log_dir/peer.stderr.* > $log_dir/summary.err
+    cat logs/peer_time_* > $log_dir/summary.time
+    rm logs/peer_time_*
     exit
 }
 
