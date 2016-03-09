@@ -81,7 +81,7 @@ int Peer::setUpServer() {
 
     if(ret != 0)
     {
-        std::cout << "[setUpServer error] " << strerror(errno) << std::endl << std::endl;
+        std::cerr << "[setUpServer error] " << strerror(errno) << std::endl << std::endl;
         return -1 ;
     }
 
@@ -157,7 +157,7 @@ int Peer::startServer() {
             // std::cout << "Client connected. Using file desciptor " << rfd << std::endl;
             if (_activeConnect > MAXFD)
             {
-                std::cout << "[startServer error] To many clients trying to connect." << std::endl;
+                std::cerr << "[startServer error] To many clients trying to connect." << std::endl;
                 close(rfd);
                 continue;
             }
@@ -223,7 +223,7 @@ int Peer::floodingMessage(const std::string &msg) {
             // getaddrinfo returns 0 on succes, or some other value when an error occured.
             // (translated into human readable text by the gai_gai_strerror function).
             if (status != 0) {
-                std::cout << "[floodingMessage] getaddrinfo error" << gai_strerror(status) << std::endl;
+                std::cerr << "[floodingMessage] getaddrinfo error" << gai_strerror(status) << std::endl;
                 return status;
             }
 
@@ -231,13 +231,13 @@ int Peer::floodingMessage(const std::string &msg) {
             socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
                               host_info_list->ai_protocol);
             if (socketfd == -1) {
-              std::cout << "[floodingMessage] socket error.\n" ;
+              std::cerr << "[floodingMessage] socket error.\n" ;
               return socketfd;
             }
 
             status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
             if (status == -1) {
-                std::cout << "[floodingMessage] connect error.\n" ;
+                std::cerr << "[floodingMessage] connect error.\n" ;
                 return status;
             }
 
@@ -275,7 +275,7 @@ int Peer::sendPeerMessage(int peerId, const char *msg) {
     // getaddrinfo returns 0 on succes, or some other value when an error occured.
     // (translated into human readable text by the gai_gai_strerror function).
     if (status != 0)  {
-        std::cout << "[seendPeerMessage] getaddrinfo error" << gai_strerror(status) << std::endl;
+        std::cerr << "[seendPeerMessage] getaddrinfo error" << gai_strerror(status) << std::endl;
         return -1;
     }
 
@@ -283,13 +283,13 @@ int Peer::sendPeerMessage(int peerId, const char *msg) {
     socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
                       host_info_list->ai_protocol);
     if (socketfd == -1) {
-        std::cout << "[seendPeerMessage] socket error " << std::endl;
+        std::cerr << "[seendPeerMessage] socket error " << std::endl;
         return -2;
     }
 
     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1)  {
-        std::cout << "[seendPeerMessage] connect error" << std::endl;
+        std::cerr << "[seendPeerMessage] connect error" << std::endl;
         return -3;
     }
 

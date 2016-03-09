@@ -37,7 +37,8 @@ for ip in $ip_addrs; do
         # randomly assigns type: seller/buyer
         is_seller=$(($RANDOM % 2))
 #        ./dummy_work.sh $peer $1 $is_seller > `printf '%s/peer.%03d' $log_dir $peer` &
-        ./run_peer $peer $1 $is_seller > `printf '%s/peer.%03d' $log_dir $peer` &
+        ./run_peer $peer $1 $is_seller > `printf '%s/peer.stdout.%03d' $log_dir $peer` \
+            2> `printf '%s/peer.stderr.%03d' $log_dir $peer`&
         peer_types[$n_peers]=$is_seller
         peer_ids[$n_peers]=$peer
         let n_peers=n_peers+1
@@ -56,7 +57,8 @@ function kill_peers() {
         wait $pid
     done
     # create summary log by concatenating all peer logs
-    cat $log_dir/peer.* > $log_dir/summary
+    cat $log_dir/peer.stdout.* > $log_dir/summary
+    cat $log_dir/peer.stderr.* > $log_dir/summary.err
     exit
 }
 

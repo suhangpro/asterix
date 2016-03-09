@@ -44,14 +44,14 @@ int Buyer::lookUp() {
 
 	floodingMessage(msg);
 
-    std::printf("[   buyer-%03d] I want to buy %s.\n", _peerId, goodsNames[_interestGoods]);
+    std::printf("[buyer-%03d] I want to buy %s.\n", _peerId, goodsNames[_interestGoods]);
 
 	return 0;
 }
 
 int Buyer::buy() {
 	if(!_sellers.empty()) {
-        std::printf("[   buyer-%03d] ", _peerId);
+        std::printf("[buyer-%03d] ", _peerId);
         std::printf("Peer #%d", _sellers.front());
         for(size_t i = 1; i < _sellers.size(); ++i )
             std::printf(", #%d", _sellers[i]);
@@ -83,7 +83,7 @@ int Buyer::buy() {
     // getaddrinfo returns 0 on succes, or some other value when an error occured.
     // (translated into human readable text by the gai_gai_strerror function).
     if (status != 0)  {
-        std::cout << "[buy] getaddrinfo error" << gai_strerror(status) << std::endl;
+        std::cerr << "[buy] getaddrinfo error" << gai_strerror(status) << std::endl;
         return -1;
     }
 
@@ -91,14 +91,14 @@ int Buyer::buy() {
     socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype,
                       host_info_list->ai_protocol);
     if (socketfd == -1) {
-        std::cout << "[buy] socket error " << std::endl;
+        std::cerr << "[buy] socket error " << std::endl;
         return -2;
     }
 
 
     status = connect(socketfd, host_info_list->ai_addr, host_info_list->ai_addrlen);
     if (status == -1)  {
-        std::cout << "[buy] connect error" << std::endl;
+        std::cerr << "[buy] connect error" << std::endl;
         return -3;
     }
 
@@ -113,12 +113,12 @@ int Buyer::buy() {
     bytes_recieved = recv(socketfd, incomming_data_buffer,1000, 0);
     // If no data arrives, the program will just wait here until some data arrives.
     if (bytes_recieved == 0) {
-        std::cout << "[buy] host shut down." << std::endl ;
+        std::cerr << "[buy] host shut down." << std::endl ;
         return -4;
     }
 
     if (bytes_recieved == -1) {
-        std::cout << "[buy] recieve error!" << std::endl ;
+        std::cerr << "[buy] recieve error!" << std::endl ;
         return -5;
     }
 
@@ -133,9 +133,9 @@ int Buyer::buy() {
     std::vector<int> path;
     decodeMessage(incomming_data_buffer, requestType, goods, var, path);
     if(requestType == "deal")
-        std::printf("[   buyer-%03d] I just #bought# %s from peer #%d. Yay!\n", _peerId, goodsNames[_interestGoods], sellerId);
+        std::printf("[buyer-%03d] I just #bought# %s from peer #%d. Yay!\n", _peerId, goodsNames[_interestGoods], sellerId);
     else if(requestType == "fail_deal")
-        std::printf("[   buyer-%03d] Peer #%d doesn't have %s anymore :(\n", _peerId, sellerId, goodsNames[_interestGoods]);
+        std::printf("[buyer-%03d] Peer #%d doesn't have %s anymore :(\n", _peerId, sellerId, goodsNames[_interestGoods]);
 
     // freeaddrinfo(host_info_list);
     close(socketfd);
@@ -159,7 +159,7 @@ void Buyer::processMessage(int rfd) {
 
     if (buflen <= 0)
     {
-        std::cout << "[Buyer - processMessage] client disconnected. Clearing fd. " << rfd << std::endl ;
+        std::cerr << "[buyer-"<<_peerId<<"] Client disconnected."<< std::endl ;
 /*        pthread_mutex_lock(&_mutex_state);
         FD_CLR(rfd, &_the_state);      // free fd's from  clients
         pthread_mutex_unlock(&_mutex_state);
@@ -180,12 +180,12 @@ void Buyer::processMessage(int rfd) {
     pthread_mutex_lock(&_mutex_state);
 
     if(requestType == "purchase") {
-        std::cout << "[Buyer - processMessage] There must be something wrong. A buyer should not receive this purchase request.\n";
+        std::cerr << "[buyer-"<<_peerId<<"] There must be something wrong. A buyer should not receive this purchase request.\n";
     } else if(requestType == "look_up") {
         floodingMessage(buf);
 
         //std::printf("[messager-%03d] Peer #%d wants to buy %s. Hop count: %d. Path is ", _peerId, path.front(), goodsNames[goods], var);
-        std::printf("[messager-%03d] Peer #%d wants to buy %s. Path is ", _peerId, path.front(), goodsNames[goods]);
+        std::printf("[msger-%03d] Peer #%d wants to buy %s. Path is ", _peerId, path.front(), goodsNames[goods]);
         for(size_t i = 0; i < path.size() - 1; ++i)
             std::printf("%d->", path[i]);
         std::printf("%d.\n", path.back());
@@ -194,14 +194,14 @@ void Buyer::processMessage(int rfd) {
         if(path.empty()) {
             _sellers.push_back(sellerPeerId);
 
-            std::printf("[   buyer-%03d] Peer #%d replies it's selling %s.\n", _peerId, sellerPeerId, goodsNames[goods]);
+            std::printf("[buyer-%03d] Peer #%d replies it's selling %s.\n", _peerId, sellerPeerId, goodsNames[goods]);
         }
         else {       
             int lastNbPeerId = path.back(); 
             std::string msg = encodeMessage("reply", goods, sellerPeerId, path.begin(), path.end() - 1);
             sendPeerMessage(lastNbPeerId, msg.c_str());
 
-            std::printf("[messager-%03d] Peer #%d wants to sell %s to peer #%d. Path back is ", _peerId, sellerPeerId, goodsNames[goods], path.front());
+            std::printf("[msger-%03d] Peer #%d wants to sell %s to peer #%d. Path back is ", _peerId, sellerPeerId, goodsNames[goods], path.front());
             for(size_t i = path.size() - 1; i > 0; --i)
                 std::printf("%d->", path[i]);
             std::printf("%d.\n", path[0]);
