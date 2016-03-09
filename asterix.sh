@@ -65,7 +65,7 @@ function kill_peers() {
     cat $log_dir/peer.stdout.* > $log_dir/summary
     cat $log_dir/peer.stderr.* > $log_dir/summary.err
     cat logs/peer_time_* > $log_dir/summary.time
-    rm -r logs/peer_time_*
+    rm -f logs/peer_time_*
     exit
 }
 
