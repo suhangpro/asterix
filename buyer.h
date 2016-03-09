@@ -4,6 +4,8 @@
 #include "peer.h"
 #include <ctime>
 #include <vector>
+#include <chrono>
+#include <ctime>
 
 const int MAX_WAIT_TIME = 5;
 const int MAX_HOP_COUNT = 3;
@@ -31,6 +33,8 @@ protected:
 	Goods _interestGoods;
 
 	std::vector<int> _sellers;
+
+	std::chrono::time_point<std::chrono::system_clock> _timeSpot;
 };
 
 inline void *startBuyerServer(void *arg) {
