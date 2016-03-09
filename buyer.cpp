@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fcntl.h>
+#include <fstream>
 
 int Buyer::Run() {
 	// in case not all nodes are setup
@@ -16,8 +17,10 @@ int Buyer::Run() {
 	//std::cout << "server is running.\n";
 
 	int iter = 0;
-	while(1) {
+	// while(1) {
+    for(int i = 0; i < 1000; ++i) {
 	//	std::cout << "=========== iter " << ++iter << " ==============\n";
+        _timeSpot = std::chrono::system_clock::now();
 
 		lookUp();
 
@@ -193,6 +196,14 @@ void Buyer::processMessage(int rfd) {
         int sellerPeerId = var;
         if(path.empty()) {
             _sellers.push_back(sellerPeerId);
+
+            char fileName[1000];
+            std::sprintf(fileName, "./logs/peer_time_%03d.txt", _peerId);
+            std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+            std::ofstream out(fileName, std::ofstream::app);
+            std::chrono::duration<double> elapsed_seconds = end - _timeSpot;
+            out << elapsed_seconds.count() << std::endl;
+            out.close();
 
             std::printf("[   buyer-%03d] Peer #%d replies it's selling %s.\n", _peerId, sellerPeerId, goodsNames[goods]);
         }
